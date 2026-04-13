@@ -8,6 +8,7 @@ env:
   IMAGE_NAME: flask-app
   JFROG_REGISTRY: aparnamounika7.jfrog.io
   JFROG_REPO: fjpd-docker-local
+  NAMESPACE: default
 
 jobs:
 
@@ -50,7 +51,7 @@ jobs:
 
 
 # =========================
-# 2. DOCKER BUILD + PUSH TO JFROG
+# 2. DOCKER BUILD + PUSH
 # =========================
   docker-build-push:
     needs: build-test-scan
@@ -73,13 +74,13 @@ jobs:
         docker tag $IMAGE_NAME:latest \
         $JFROG_REGISTRY/$JFROG_REPO/$IMAGE_NAME:${{ github.run_number }}
 
-    - name: Push Docker Image to JFrog
+    - name: Push Docker Image
       run: |
         docker push $JFROG_REGISTRY/$JFROG_REPO/$IMAGE_NAME:${{ github.run_number }}
 
 
 # =========================
-# 3. DEPLOY TO EKS
+# 3. DEPLOY TO EKS (FIXED)
 # =========================
   deploy-to-eks:
     needs: docker-build-push
@@ -89,7 +90,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Configure AWS credentials
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -97,7 +97,6 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
-    # Setup kubectl with EKS cluster
     - name: Update kubeconfig for EKS
       run: |
         aws eks update-kubeconfig \
@@ -105,21 +104,27 @@ jobs:
           --region ${{ secrets.AWS_REGION }}
 
     # =========================
-    # 🔥 FIX: CREATE DEPLOYMENT FIRST
+    # IMPORTANT: Ensure deployment exists
     # =========================
-    - name: Deploy Kubernetes manifests
+    - name: Apply Kubernetes manifests
       run: |
-        kubectl apply -f k8s/deployment.yaml
-        kubectl apply -f k8s/service.yaml
+        kubectl apply -f k8s/deployment.yaml -n $NAMESPACE
+        kubectl apply -f k8s/service.yaml -n $NAMESPACE
 
     # =========================
-    # Update image in deployment
+    # Update image
     # =========================
-    - name: Update image in Deployment
+    - name: Update Deployment Image
       run: |
         kubectl set image deployment/flask-app \
-        flask-app=$JFROG_REGISTRY/$JFROG_REPO/$IMAGE_NAME:${{ github.run_number }}
+          flask-app=$JFROG_REGISTRY/$JFROG_REPO/$IMAGE_NAME:${{ github.run_number }} \
+          -n $NAMESPACE
 
-    - name: Verify rollout status
+    # =========================
+    # Debug + rollout check
+    # =========================
+    - name: Check rollout status
       run: |
-        kubectl rollout status deployment/flask-app
+        kubectl get pods -n $NAMESPACE
+        kubectl describe pods -n $NAMESPACE
+        kubectl rollout status deployment/flask-app -n $NAMESPACE --timeout=180s
