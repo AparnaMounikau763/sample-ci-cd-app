@@ -35,12 +35,17 @@ jobs:
       run: |
         PYTHONPATH=. pytest --cov=. --cov-report=xml
 
+<<<<<<< HEAD
     # 🔍 SONARQUBE ANALYSIS
+=======
+    # 🔍 SONARQUBE SCAN
+>>>>>>> 8e66384ec5f358f1e44a4a38d4ad63e8d1348c5b
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v2
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+<<<<<<< HEAD
       with:
         args: >
           -Dsonar.projectKey=flask-ci-cd-app
@@ -50,6 +55,10 @@ jobs:
 # 2. DOCKER BUILD + PUSH TO JFROG
 # =========================
   docker-build-push:
+=======
+
+  docker-build:
+>>>>>>> 8e66384ec5f358f1e44a4a38d4ad63e8d1348c5b
     needs: build-test-scan
     runs-on: ubuntu-latest
 
@@ -63,6 +72,7 @@ jobs:
         -u ${{ secrets.JFROG_USERNAME }} --password-stdin
 
     - name: Build Docker Image
+<<<<<<< HEAD
       run: docker build -t $IMAGE_NAME:latest .
 
     - name: Tag Docker Image
@@ -104,3 +114,6 @@ jobs:
         flask-app=${{ secrets.JFROG_URL }}/docker-local/$IMAGE_NAME:${{ github.run_number }}
 
         kubectl rollout status deployment/flask-app
+=======
+      run: docker build -t flask-app:latest .
+>>>>>>> 8e66384ec5f358f1e44a4a38d4ad63e8d1348c5b
