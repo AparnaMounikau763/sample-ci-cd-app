@@ -6,6 +6,9 @@ on:
 
 env:
   IMAGE_NAME: flask-app
+  JFROG_REGISTRY: aparnamounika7.jfrog.io
+
+
 
 jobs:
 
@@ -65,10 +68,9 @@ jobs:
     - name: Build Docker Image
       run: docker build -t $IMAGE_NAME:latest .
 
-    - name: Tag Docker Image
+    - name: Push Docker Image to JFrog
       run: |
-        docker tag $IMAGE_NAME:latest \
-        ${{ secrets.JFROG_URL }}/docker-local/$IMAGE_NAME:${{ github.run_number }}
+        docker push $JFROG_REGISTRY/docker-local/$IMAGE_NAME:${{ github.run_number }}
 
     - name: Push Docker Image to JFrog
       run: |
