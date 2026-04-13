@@ -36,7 +36,7 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-  docker-build-push:
+  docker-build:
     needs: build-test-scan
     runs-on: ubuntu-latest
 
@@ -44,44 +44,5 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Login to JFrog Artifactory
-      run: |
-        echo "${{ secrets.JFROG_PASSWORD }}" | docker login ${{ secrets.JFROG_URL }} \
-        -u ${{ secrets.JFROG_USERNAME }} --password-stdin
-
     - name: Build Docker Image
       run: docker build -t flask-app:latest .
-
-    - name: Tag Docker Image
-      run: |
-        docker tag flask-app:latest \
-        ${{ secrets.JFROG_URL }}/docker-local/flask-app:latest
-
-    - name: Push Docker Image to JFrog
-      run: |
-        docker push ${{ secrets.JFROG_URL }}/docker-local/flask-app:latest
-
-  deploy-to-aks:
-    needs: docker-build-push
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Install kubectl
-      uses: azure/setup-kubectl@v4
-
-    - name: Azure Login
-      uses: azure/login@v2
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    - name: Get AKS Credentials
-      run: |
-        az aks get-credentials \
-        --resource-group <RESOURCE_GROUP> \
-        --name <AKS_CLUSTER>
-
-    - name: Deploy to AKS
-      run: kubectl apply -f k8s-deployment.yaml
