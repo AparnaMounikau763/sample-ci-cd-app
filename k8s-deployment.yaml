@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: flask-app
-        image: <JFROG-IMAGE>:latest
+        image: <JFROG_IMAGE>:latest
         ports:
         - containerPort: 5000
 ---
