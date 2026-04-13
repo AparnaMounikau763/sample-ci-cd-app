@@ -59,23 +59,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Login to JFrog
     - name: Login to JFrog Artifactory
       run: |
         echo "${{ secrets.JFROG_PASSWORD }}" | docker login $JFROG_REGISTRY \
         -u ${{ secrets.JFROG_USERNAME }} --password-stdin
 
-    # Build Image
     - name: Build Docker Image
       run: docker build -t $IMAGE_NAME:latest .
 
-    # Tag Image (FIXED FORMAT)
     - name: Tag Docker Image
       run: |
         docker tag $IMAGE_NAME:latest \
         $JFROG_REGISTRY/$JFROG_REPO/$IMAGE_NAME:${{ github.run_number }}
 
-    # Push Image (ONLY ONCE)
     - name: Push Docker Image to JFrog
       run: |
         docker push $JFROG_REGISTRY/$JFROG_REPO/$IMAGE_NAME:${{ github.run_number }}
@@ -96,13 +92,13 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-secret-region: ${{ secrets.AWS_REGION }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
     - name: Update kubeconfig for EKS
       run: |
         aws eks update-kubeconfig \
           --name ${{ secrets.EKS_CLUSTER_NAME }} \
-          --region $ {{ secrets.AWS_REGION }}  
+          --region ${{ secrets.AWS_REGION }}
 
     - name: Deploy to EKS
       run: |
