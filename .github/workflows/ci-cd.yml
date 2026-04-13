@@ -37,4 +37,8 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Build Docker Image
+<<<<<<< HEAD
       run: docker build -t flask-app:latest .
+=======
+      run: docker build -t flask-app:latest .
+>>>>>>> 3b8c8829d61e71acfc94551c8358c25b0e09d35d
