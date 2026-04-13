@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: flask-app
-        image: <JFROG_IMAGE>:latest
+        image: aparnamounika7.jfrog.io/fjpd-docker-local/flask-app:latest
         ports:
         - containerPort: 5000
