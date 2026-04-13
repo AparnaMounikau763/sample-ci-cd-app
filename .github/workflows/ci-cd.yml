@@ -7,8 +7,7 @@ on:
 env:
   IMAGE_NAME: flask-app
   JFROG_REGISTRY: aparnamounika7.jfrog.io
-
-
+  JFROG_REPO: fjpd-docker-local
 
 jobs:
 
@@ -60,21 +59,26 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # Login to JFrog
     - name: Login to JFrog Artifactory
       run: |
-        echo "${{ secrets.JFROG_PASSWORD }}" | docker login ${{ secrets.JFROG_URL }} \
+        echo "${{ secrets.JFROG_PASSWORD }}" | docker login $JFROG_REGISTRY \
         -u ${{ secrets.JFROG_USERNAME }} --password-stdin
 
+    # Build Image
     - name: Build Docker Image
       run: docker build -t $IMAGE_NAME:latest .
 
-    - name: Push Docker Image to JFrog
+    # Tag Image (FIXED FORMAT)
+    - name: Tag Docker Image
       run: |
-        docker push $JFROG_REGISTRY/docker-local/$IMAGE_NAME:${{ github.run_number }}
+        docker tag $IMAGE_NAME:latest \
+        $JFROG_REGISTRY/$JFROG_REPO/$IMAGE_NAME:${{ github.run_number }}
 
+    # Push Image (ONLY ONCE)
     - name: Push Docker Image to JFrog
       run: |
-        docker push ${{ secrets.JFROG_URL }}/docker-local/$IMAGE_NAME:${{ github.run_number }}
+        docker push $JFROG_REGISTRY/$JFROG_REPO/$IMAGE_NAME:${{ github.run_number }}
 
 # =========================
 # 3. DEPLOY TO EKS
@@ -103,6 +107,6 @@ jobs:
     - name: Deploy to EKS
       run: |
         kubectl set image deployment/flask-app \
-        flask-app=${{ secrets.JFROG_URL }}/docker-local/$IMAGE_NAME:${{ github.run_number }}
+        flask-app=$JFROG_REGISTRY/$JFROG_REPO/$IMAGE_NAME:${{ github.run_number }}
 
         kubectl rollout status deployment/flask-app
