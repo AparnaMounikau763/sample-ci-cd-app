@@ -48,6 +48,7 @@ jobs:
           -Dsonar.projectKey=flask-ci-cd-app
           -Dsonar.python.coverage.reportPaths=coverage.xml
 
+
 # =========================
 # 2. DOCKER BUILD + PUSH TO JFROG
 # =========================
@@ -76,6 +77,7 @@ jobs:
       run: |
         docker push $JFROG_REGISTRY/$JFROG_REPO/$IMAGE_NAME:${{ github.run_number }}
 
+
 # =========================
 # 3. DEPLOY TO EKS
 # =========================
@@ -87,6 +89,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # Configure AWS credentials
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -94,15 +97,29 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
+    # Setup kubectl with EKS cluster
     - name: Update kubeconfig for EKS
       run: |
         aws eks update-kubeconfig \
           --name ${{ secrets.EKS_CLUSTER_NAME }} \
           --region ${{ secrets.AWS_REGION }}
 
-    - name: Deploy to EKS
+    # =========================
+    # 🔥 FIX: CREATE DEPLOYMENT FIRST
+    # =========================
+    - name: Deploy Kubernetes manifests
+      run: |
+        kubectl apply -f k8s/deployment.yaml
+        kubectl apply -f k8s/service.yaml
+
+    # =========================
+    # Update image in deployment
+    # =========================
+    - name: Update image in Deployment
       run: |
         kubectl set image deployment/flask-app \
         flask-app=$JFROG_REGISTRY/$JFROG_REPO/$IMAGE_NAME:${{ github.run_number }}
 
+    - name: Verify rollout status
+      run: |
         kubectl rollout status deployment/flask-app
