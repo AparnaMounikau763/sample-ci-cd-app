@@ -12,6 +12,10 @@ spec:
       labels:
         app: flask-app
     spec:
+      imagePullSecrets:
+      - name: jfrog-secret
+      tolerations:   # 👈 ADD THIS BLOCK
+      - operator: "Exists"
       containers:
       - name: flask-app
         image: aparnamounika7.jfrog.io/fjpd-docker-local/flask-app:latest
