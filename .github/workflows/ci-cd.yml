@@ -37,7 +37,10 @@ jobs:
 
     - name: Run Tests with Coverage
       run: |
-        PYTHONPATH=. pytest --cov=. --cov-report=xml
+        PYTHONPATH=. pytest tests/ \
+        --cov=app \
+        --cov-report=xml \
+        --cov-report=term-missing
 
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v2
